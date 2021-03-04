@@ -13,8 +13,10 @@ class CollectPointsEnv:
 
     def __init__(self, env_seed):
 
-        self.screen_width = 500
-        self.screen_height = 500
+        self.number_of_time_steps = 300
+
+        self.screen_width = 800
+        self.screen_height = 800
 
         # Radius of agent
         self.agent_radius = 10
@@ -23,20 +25,18 @@ class CollectPointsEnv:
         self.number_points_to_collect = 10
 
         # Agent coordinates
-        self.agent_position_x = 200
-        self.agent_position_y = 200
+        self.agent_position_x = 400
+        self.agent_position_y = 400
+
+        self.sensor_range = 100
 
         self.seed = env_seed
 
         self.points = [(self.generate_random_number(self.screen_width), self.generate_random_number(self.screen_height)) for _ in
                        range(self.number_points_to_collect)]
 
-        self.ob = list()
-        self.ob.append(self.agent_position_x / self.screen_width)
-        self.ob.append(self.agent_position_y / self.screen_height)
-        for point in self.points:
-            self.ob.append(point[0] / self.screen_width)
-            self.ob.append(point[1] / self.screen_height)
+        self.ob = np.array(
+            [self.agent_position_x / self.screen_width, self.agent_position_y / self.screen_height, 0.0, 0.0])
 
         self.t = 0
 
@@ -53,11 +53,8 @@ class CollectPointsEnv:
         self.agent_position_y = min(self.agent_position_y, self.screen_width - self.agent_radius)
         self.agent_position_y = max(self.agent_position_y, self.agent_radius)
 
-        self.ob[0] = self.agent_position_x / self.screen_width
-        self.ob[1] = self.agent_position_y / self.screen_height
-
+        # Collect points in reach
         rew = 0.0
-
         points_new = []
         for point in self.points:
             if (point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2 < (
@@ -68,26 +65,44 @@ class CollectPointsEnv:
 
         self.points = points_new
 
+        # Check points in sensor range
+        sensor_signal = 0.0
+        for point in self.points:
+            if (point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2 < (
+                    self.point_radius + self.sensor_range) ** 2:
+                sensor_signal += 0.5
+
         self.t += 1
 
-        if self.t < 1000:
+        if self.t < self.number_of_time_steps:
             done = False
         else:
             done = True
 
-        info = []
+        self.ob[0] = self.agent_position_x / self.screen_width
+        self.ob[1] = self.agent_position_y / self.screen_height
+        self.ob[2] = sensor_signal
+        self.ob[3] = rew
 
-        return np.asarray(self.ob), rew, done, info
+        info = {"sensor-signal": sensor_signal}
+
+        return self.ob, rew, done, info
 
     def render(self):
 
         color_red = (0, 0, 255)
         color_blue = (0, 255, 0)
+        color_yellow = (255, 255, 0)
 
         image = 255 * np.ones(shape=[self.screen_width, self.screen_height, 3], dtype=np.uint8)
 
+        # Draw sensor range
+        image = cv2.circle(image, (self.agent_position_x, self.agent_position_y), self.sensor_range, color_yellow, -1)
+
+        # Draw agent
         image = cv2.circle(image, (self.agent_position_x, self.agent_position_y), self.agent_radius, color_red, -1)
 
+        # Draw points
         for point in self.points:
             image = cv2.circle(image, point, self.point_radius, color_blue, -1)
 
