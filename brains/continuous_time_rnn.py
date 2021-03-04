@@ -71,14 +71,27 @@ class ContinuousTimeRNN:
 
         config = ContinuousTimeRNNCfg(**configuration)
 
-        v_mask = cls._generate_mask(config.number_neurons, number_inputs, config.v_mask_density)
-        w_mask = cls._generate_mask(config.number_neurons, config.number_neurons, config.w_mask_density)
-        t_mask = cls._generate_mask(number_outputs, config.number_neurons, config.t_mask_density)
+        v_mask = cls._generate_mask(config.v_mask, config.number_neurons, number_inputs, config.v_mask_density)
+        w_mask = cls._generate_mask(config.w_mask, config.number_neurons, config.number_neurons, config.w_mask_density, True)
+        t_mask = cls._generate_mask(config.t_mask, number_outputs, config.number_neurons, config.t_mask_density)
 
         return cls.get_brain_state_from_masks(v_mask, w_mask, t_mask)
 
     @staticmethod
-    def _generate_mask(n, m, mask_density):
+    def _generate_mask(mask_type, n, m, mask_density, keep_main_diagonal=False):
+
+        if mask_type == "random":
+            mask = np.random.rand(n, m) < mask_density
+        elif mask_type == "dense":
+            mask = np.ones((n, m), dtype=bool)
+        else:
+            raise RuntimeError("Unknown mask_type: " + str(mask_type))
+
+        if keep_main_diagonal:
+            assert n == m
+            for i in range(n):
+                mask[i,i] = True
+
         return np.random.rand(n, m) < mask_density
 
     @classmethod

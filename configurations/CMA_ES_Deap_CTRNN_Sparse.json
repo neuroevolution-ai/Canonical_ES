@@ -7,13 +7,10 @@
     "brain": {
         "type": "CTRNN",
         "delta_t": 0.05,
-        "number_neurons": 200,
-        "v_mask": "random",
-        "v_mask_density": 0.25,
-        "w_mask": "random",
-        "w_mask_density": 0.05,
-        "t_mask": "random",
-        "t_mask_density": 1,
+        "number_neurons": 50,
+        "v_mask": "dense",
+        "w_mask": "dense",
+        "t_mask": "dense",
         "clipping_range_min": -1.0,
         "clipping_range_max": 1.0
     },
