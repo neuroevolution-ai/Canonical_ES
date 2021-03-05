@@ -22,7 +22,7 @@ class CollectPointsEnv:
         self.agent_radius = 10
         self.point_radius = 8
 
-        self.number_points_to_collect = 10
+        self.number_points_to_collect = 5
 
         # Agent coordinates
         self.agent_position_x = 400
@@ -35,8 +35,17 @@ class CollectPointsEnv:
         self.points = [(self.generate_random_number(self.screen_width), self.generate_random_number(self.screen_height)) for _ in
                        range(self.number_points_to_collect)]
 
-        self.ob = np.array(
-            [self.agent_position_x / self.screen_width, self.agent_position_y / self.screen_height, 0.0, 0.0])
+        #ob = np.array(
+        #    [self.agent_position_x / self.screen_width, self.agent_position_y / self.screen_height, 0.0, 0.0])
+
+        ob_list = list()
+        ob_list.append(self.agent_position_x / self.screen_width)
+        ob_list.append(self.agent_position_y / self.screen_height)
+        for point in self.points:
+            ob_list.append(point[0] / self.screen_width)
+            ob_list.append(point[1] / self.screen_height)
+
+        self.ob = np.asarray(ob_list)
 
         self.t = 0
 
@@ -66,11 +75,11 @@ class CollectPointsEnv:
         self.points = points_new
 
         # Check points in sensor range
-        sensor_signal = 0.0
-        for point in self.points:
-            if (point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2 < (
-                    self.point_radius + self.sensor_range) ** 2:
-                sensor_signal += 0.5
+        #sensor_signal = 0.0
+        #for point in self.points:
+        #    if (point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2 < (
+        #            self.point_radius + self.sensor_range) ** 2:
+        #        sensor_signal += 0.5
 
         self.t += 1
 
@@ -81,10 +90,8 @@ class CollectPointsEnv:
 
         self.ob[0] = self.agent_position_x / self.screen_width
         self.ob[1] = self.agent_position_y / self.screen_height
-        self.ob[2] = sensor_signal
-        self.ob[3] = rew
 
-        info = {"sensor-signal": sensor_signal}
+        info = []
 
         return self.ob, rew, done, info
 
@@ -97,7 +104,7 @@ class CollectPointsEnv:
         image = 255 * np.ones(shape=[self.screen_width, self.screen_height, 3], dtype=np.uint8)
 
         # Draw sensor range
-        image = cv2.circle(image, (self.agent_position_x, self.agent_position_y), self.sensor_range, color_yellow, -1)
+        #image = cv2.circle(image, (self.agent_position_x, self.agent_position_y), self.sensor_range, color_yellow, -1)
 
         # Draw agent
         image = cv2.circle(image, (self.agent_position_x, self.agent_position_y), self.agent_radius, color_red, -1)

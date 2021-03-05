@@ -9,7 +9,7 @@ class EpisodeRunner:
     def __init__(self, env_name: str, brain_class, brain_configuration: dict):
 
         self.env_name = env_name
-        self.input_size = 4  # flatdim(env.observation_space)
+        self.input_size = 12  # flatdim(env.observation_space)
         self.output_size = 2 # flatdim(env.action_space)
 
         self.brain_class = brain_class
