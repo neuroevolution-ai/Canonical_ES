@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import math
 from gym.envs.registration import register
 
 #register(
@@ -22,7 +23,7 @@ class CollectPointsEnv:
         self.agent_radius = 10
         self.point_radius = 8
 
-        self.number_points_to_collect = 5
+        self.number_points_to_collect = 3
 
         # Agent coordinates
         self.agent_position_x = 400
@@ -41,6 +42,7 @@ class CollectPointsEnv:
         ob_list = list()
         ob_list.append(self.agent_position_x / self.screen_width)
         ob_list.append(self.agent_position_y / self.screen_height)
+        ob_list.append(0.0)
         for point in self.points:
             ob_list.append(point[0] / self.screen_width)
             ob_list.append(point[1] / self.screen_height)
@@ -48,6 +50,12 @@ class CollectPointsEnv:
         self.ob = np.asarray(ob_list)
 
         self.t = 0
+
+    def get_number_inputs(self):
+        return len(self.ob)
+
+    def get_number_outputs(self):
+        return 2
 
     def reset(self):
         return np.asarray(self.ob)
@@ -64,22 +72,17 @@ class CollectPointsEnv:
 
         # Collect points in reach
         rew = 0.0
+        self.ob[2] = 0.0
         points_new = []
         for point in self.points:
-            if (point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2 < (
-                    self.point_radius + self.agent_radius) ** 2:
-                rew += 1.0
-            else:
+            distance = math.sqrt((point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2)
+            if distance > self.point_radius + self.agent_radius:
+                rew -= distance / self.screen_width
                 points_new.append(point)
+            else:
+                self.ob[2] = 1.0
 
         self.points = points_new
-
-        # Check points in sensor range
-        #sensor_signal = 0.0
-        #for point in self.points:
-        #    if (point[0] - self.agent_position_x) ** 2 + (point[1] - self.agent_position_y) ** 2 < (
-        #            self.point_radius + self.sensor_range) ** 2:
-        #        sensor_signal += 0.5
 
         self.t += 1
 
